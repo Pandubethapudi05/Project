@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tic Tac Toe</title>
+  <style>
+    body {
+      font-family: 'Quicksand', sans-serif;
+      text-align: center;
+      background: linear-gradient(to right, #f8ffae, #43c6ac);
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 3em;
+      color: #333;
+    }
+    #home, #tossSection, #gameSection, #scoreContainer {
+      margin-top: 30px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1.1em;
+      margin: 10px;
+      border: none;
+      border-radius: 8px;
+      background-color: #333;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #555;
+    }
+    #scoreBoard {
+      background: linear-gradient(to right, #ffecd2, #fcb69f);
+      padding: 10px 25px;
+      font-size: 1.2em;
+      font-weight: bold;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      display: inline-block;
+    }
+    #game {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      gap: 10px;
+      justify-content: center;
+      margin: 20px auto;
+    }
+    .cell {
+      width: 100px;
+      height: 100px;
+      font-size: 2.5em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #fff;
+      border: 3px solid #555;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s;
+    }
+    .cell:hover:not(.taken) {
+      background-color: #d0f0c0;
+    }
+    .cell.taken {
+      pointer-events: none;
+    }
+    .cell.X {
+      color: #e74c3c;
+      text-shadow: 0 0 8px #e74c3c;
+    }
+    .cell.O {
+      color: #3498db;
+      text-shadow: 0 0 8px #3498db;
+    }
+    /* Winning animation */
+.cell.win {
+  background-color: #a3f7a3 !important; /* light mint green background */
+  animation: popBounce 0.6s ease forwards;
+  border: 3px solid #2ecc40; /* vibrant green border */
+  box-shadow:
+    0 0 8px #55d655,
+    0 0 15px #2ecc40,
+    0 0 25px #27ae60;
+  color: #004d00 !important; /* dark green text for contrast */
+  text-shadow:
+    0 0 6px #55d655,
+    0 0 12px #2ecc40;
+}
+
+
+    @keyframes popBounce {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+    #coinContainer {
+      margin: 20px auto;
+      width: 120px;
+      height: 120px;
+      perspective: 1000px;
+    }
+    .coin {
+      width: 120px;
+      height: 120px;
+      position: relative;
+      transform-style: preserve-3d;
+      border-radius: 50%;
+      transition: transform 1s;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    }
+    .coin-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2em;
+      font-weight: bold;
+      color: white;
+      user-select: none;
+      border: 2px solid #daa520;
+      box-shadow: inset 0 0 5px #fff, 0 0 10px #b8860b;
+    }
+    .front {
+      background: radial-gradient(circle at 30% 30%, #ffd700, #b8860b);
+      transform: rotateY(0deg);
+    }
+    .back {
+      background: radial-gradient(circle at 30% 30%, #4a90e2, #1e3d7a);
+      transform: rotateY(180deg);
+      border: 2px solid #003d99;
+      box-shadow: inset 0 0 5px #aad4ff, 0 0 10px #003d99;
+    }
+    .coin.flip {
+      animation: flipCoin 1s ease forwards;
+    }
+    @keyframes flipCoin {
+      0% { transform: rotateY(0deg); }
+      100% { transform: rotateY(1800deg); } /* 5 spins */
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Home screen -->
+  <div id="home">
+    <h1>Tic Tac Toe</h1>
+    <p>Select Game Mode:</p>
+    <button onclick="selectMode('single')">Single Player</button>
+    <button onclick="selectMode('two')">Two Player</button>
+  </div>
+
+  <!-- Toss section -->
+  <div id="tossSection" style="display:none;">
+    <div id="coinContainer">
+      <div id="coin" class="coin">
+        <div class="coin-face front">TOSS</div>
+        <div class="coin-face back"></div>
+      </div>
+    </div>
+    <button onclick="toss()">Flip Coin</button>
+    <p id="tossResult">Waiting for toss...</p>
+  </div>
+
+  <!-- Scoreboard -->
+  <div id="scoreContainer" style="display:none;">
+    <div id="scoreBoard">Score - X: 0 | O: 0</div>
+  </div>
+
+  <!-- Game section -->
+  <div id="gameSection" style="display:none;">
+    <div id="game">
+      <div class="cell" data-index="0"></div>
+      <div class="cell" data-index="1"></div>
+      <div class="cell" data-index="2"></div>
+      <div class="cell" data-index="3"></div>
+      <div class="cell" data-index="4"></div>
+      <div class="cell" data-index="5"></div>
+      <div class="cell" data-index="6"></div>
+      <div class="cell" data-index="7"></div>
+      <div class="cell" data-index="8"></div>
+    </div>
+    <p id="status">Player X's turn</p>
+    <button onclick="restartGame()">Restart Game</button>
+  </div>
+
+  <script>
+    const cells = document.querySelectorAll('.cell');
+    const statusText = document.getElementById('status');
+    const tossResult = document.getElementById('tossResult');
+    const coin = document.getElementById('coin');
+    const coinFront = coin.querySelector('.front');
+    const coinBack = coin.querySelector('.back');
+    const scoreBoard = document.getElementById('scoreBoard');
+    const scoreContainer = document.getElementById('scoreContainer');
+    const gameSection = document.getElementById('gameSection');
+    const tossSection = document.getElementById('tossSection');
+    const home = document.getElementById('home');
+
+    let board = Array(9).fill(null);
+    let currentPlayer = null;
+    let gameOver = true;
+    let mode = null; // 'single' or 'two'
+    let scoreX = 0, scoreO = 0;
+    let winningCombo = [];
+
+    // Game win patterns
+    const winPatterns = [
+      [0,1,2],[3,4,5],[6,7,8],
+      [0,3,6],[1,4,7],[2,5,8],
+      [0,4,8],[2,4,6]
+    ];
+
+    // Choose mode from home
+    function selectMode(selectedMode) {
+      mode = selectedMode;
+      home.style.display = 'none';
+      tossSection.style.display = 'block';
+    }
+
+    // Coin toss to decide who starts
+    function toss() {
+  tossResult.style.fontWeight = 'normal';
+  tossResult.style.fontSize = '1em';
+  tossResult.textContent = "Flipping coin...";
+
+  let spins = 10; // number of spins
+  let spinCount = 0;
+  const faces = ['X', 'O'];
+
+  const spinInterval = setInterval(() => {
+    // Show random face while spinning
+    const randomFace = faces[Math.floor(Math.random() * faces.length)];
+    coinFront.textContent = randomFace;
+    coinBack.textContent = randomFace === 'X' ? 'O' : 'X';
+
+    coin.classList.remove('flip');
+    void coin.offsetWidth; // restart animation
+    coin.classList.add('flip');
+
+    spinCount++;
+    if (spinCount >= spins) {
+      clearInterval(spinInterval);
+
+      // Decide final outcome
+      const outcome = faces[Math.floor(Math.random() * faces.length)];
+      currentPlayer = outcome;
+
+      // Set final faces
+      coinFront.textContent = outcome;
+      coinBack.textContent = outcome === 'X' ? 'O' : 'X';
+
+      tossResult.style.fontWeight = 'bold';
+      tossResult.style.fontSize = '1.5em';
+      tossResult.textContent = `Player ${outcome} wins the toss and will start!`;
+
+      setTimeout(() => {
+        tossSection.style.display = 'none';
+        gameSection.style.display = 'block';
+        statusText.textContent = `Player ${outcome}'s turn`;
+        gameOver = false;
+
+        // Reset coin text
+        coinFront.textContent = 'TOSS';
+        coinBack.textContent = '';
+        coin.classList.remove('flip');
+      }, 1500);
+    }
+  }, 300); // flip every 300ms for visible spins
+}
+
+
+    // Handle cell click
+    function handleClick(event) {
+      const index = event.target.dataset.index;
+      if (board[index] || gameOver) return;
+      if (mode === 'single' && currentPlayer === 'O') return; // wait for AI
+
+      makeMove(index);
+
+      // If single player and game not over, trigger AI move
+      if (mode === 'single' && !gameOver) {
+        setTimeout(aiMove, 500);
+      }
+    }
+
+    // Make a move at index
+    function makeMove(index) {
+      board[index] = currentPlayer;
+      const cell = cells[index];
+      cell.textContent = currentPlayer;
+      cell.classList.add('taken', currentPlayer);
+
+      // Check for win
+      if (checkWinner()) {
+        gameOver = true;
+        statusText.textContent = `Player ${currentPlayer} wins!`;
+        updateScore();
+        animateWin();
+        return;
+      }
+
+      // Check for draw
+      if (!board.includes(null)) {
+        gameOver = true;
+        statusText.textContent = "It's a draw!";
+        return;
+      }
+
+      // Switch player
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      statusText.textContent = `Player ${currentPlayer}'s turn`;
+    }
+
+    // Check winner and store winning combo
+    function checkWinner() {
+      for (const pattern of winPatterns) {
+        const [a,b,c] = pattern;
+        if (board[a] && board[a] === board[b] && board[b] === board[c]) {
+          winningCombo = pattern;
+          return true;
+        }
+      }
+      winningCombo = [];
+      return false;
+    }
+
+    // Animate the winning cells
+    function animateWin() {
+      winningCombo.forEach(i => {
+        cells[i].classList.add('win');
+      });
+    }
+
+    // Update scoreboard
+    function updateScore() {
+      if (currentPlayer === 'X') scoreX++;
+      else scoreO++;
+      scoreBoard.textContent = `Score - X: ${scoreX} | O: ${scoreO}`;
+    }
+
+    // Restart the game, back to toss but keep score
+    function restartGame() {
+      board = Array(9).fill(null);
+      cells.forEach(cell => {
+        cell.textContent = '';
+        cell.className = 'cell';
+      });
+      gameOver = true;
+      currentPlayer = null;
+      winningCombo = [];
+      statusText.textContent = '';
+      scoreContainer.style.display = 'none';
+      gameSection.style.display = 'none';
+      tossSection.style.display = 'block';
+      tossResult.textContent = 'Waiting for toss...';
+      // Reset coin display
+      coinFront.textContent = 'TOSS';
+      coinBack.textContent = '';
+      coin.classList.remove('flip');
+    }
+
+    // AI move using Minimax Algorithm for perfect play
+    function aiMove() {
+      if (gameOver) return;
+      const bestMove = minimax(board, currentPlayer).index;
+      if (bestMove !== undefined) {
+        makeMove(bestMove);
+      }
+    }
+
+    // Minimax Algorithm
+    function minimax(newBoard, player) {
+      const availSpots = newBoard.map((v,i) => v === null ? i : null).filter(i => i !== null);
+
+      if (checkWinnerMinimax(newBoard, 'X')) {
+        return {score: -10};
+      } else if (checkWinnerMinimax(newBoard, 'O')) {
+        return {score: 10};
+      } else if (availSpots.length === 0) {
+        return {score: 0};
+      }
+
+      const moves = [];
+
+      for (let i=0; i<availSpots.length; i++) {
+        const move = {};
+        move.index = availSpots[i];
+        newBoard[availSpots[i]] = player;
+
+        if (player === 'O') {
+          const result = minimax(newBoard, 'X');
+          move.score = result.score;
+        } else {
+          const result = minimax(newBoard, 'O');
+          move.score = result.score;
+        }
+
+        newBoard[availSpots[i]] = null;
+        moves.push(move);
+      }
+
+      let bestMove;
+      if (player === 'O') {
+        let bestScore = -Infinity;
+        for (let i=0; i<moves.length; i++) {
+          if (moves[i].score > bestScore) {
+            bestScore = moves[i].score;
+            bestMove = moves[i];
+          }
+        }
+      } else {
+        let bestScore = Infinity;
+        for (let i=0; i<moves.length; i++) {
+          if (moves[i].score < bestScore) {
+            bestScore = moves[i].score;
+            bestMove = moves[i];
+          }
+        }
+      }
+      return bestMove;
+    }
+
+    // Helper for minimax to check winner without affecting main board
+    function checkWinnerMinimax(bd, player) {
+      return winPatterns.some(([a,b,c]) => bd[a] === player && bd[b] === player && bd[c] === player);
+    }
+
+    cells.forEach(cell => cell.addEventListener('click', handleClick));
+  </script>
+
+</body>
+</html>
